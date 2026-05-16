@@ -44,13 +44,15 @@ python scripts/train_pog.py --config configs/base.yaml
 python scripts/evaluate.py --config configs/base.yaml --task all
 ```
 
+To use macOS Metal training, set `training.backend: tensorflow` in `configs/base.yaml`.
+
 ## Main Outputs
 
 - `data/interim/canonical/canonical_stats.json`
 - `data/processed/split_manifest.json`
-- `data/processed/fitb_eval.csv`
-- `data/processed/cp_eval.csv`
-- `artifacts/item_embeddings.csv`
+- `data/processed/fitb_eval.parquet`
+- `data/processed/cp_eval.parquet`
+- `artifacts/item_embeddings.parquet`
 - `artifacts/fom_metrics.json`
 - `artifacts/baseline_metrics.json`
-- `artifacts/pog_proxy_metrics.json`
+- `artifacts/pog_metrics.json`

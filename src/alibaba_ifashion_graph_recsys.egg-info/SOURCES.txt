@@ -18,9 +18,11 @@ src/graph_recsys/models/baselines.py
 src/graph_recsys/models/fom.py
 src/graph_recsys/models/gnn.py
 src/graph_recsys/models/pog_proxy.py
+src/graph_recsys/training/tf_stack.py
 src/graph_recsys/training/train.py
 src/graph_recsys/utils/config.py
 src/graph_recsys/utils/io.py
 src/graph_recsys/utils/random.py
+tests/test_fom_pog_units.py
 tests/test_pipeline_smoke.py
 tests/test_recommend.py

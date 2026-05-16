@@ -18,6 +18,10 @@ class CanonicalStats:
     user_click_edges: int
 
 
+def _title_tokens(title: str) -> str:
+    return " ".join(tok.strip().lower() for tok in str(title).split() if tok.strip())
+
+
 def _keep_by_ratio(key: str, sample_ratio: float) -> bool:
     if sample_ratio >= 1.0:
         return True
@@ -34,11 +38,11 @@ def canonicalize_raw(
 ) -> CanonicalStats:
     ensure_dir(out_dir)
 
-    items_out = out_dir / "items.csv"
-    outfits_out = out_dir / "outfits.csv"
-    outfit_edges_out = out_dir / "outfit_item_edges.csv"
-    user_seq_out = out_dir / "user_sequences.csv"
-    user_click_edges_out = out_dir / "user_click_edges.csv"
+    items_out = out_dir / "items.parquet"
+    outfits_out = out_dir / "outfits.parquet"
+    outfit_edges_out = out_dir / "outfit_item_edges.parquet"
+    user_seq_out = out_dir / "user_sequences.parquet"
+    user_click_edges_out = out_dir / "user_click_edges.parquet"
 
     sampled_outfits_raw: list[tuple[str, list[str]]] = []
     required_item_ids: set[str] = set()
@@ -105,7 +109,7 @@ def canonicalize_raw(
             item_rows.append((item_id, category_id, image_url, title))
 
     items = pd.DataFrame(item_rows, columns=["item_id", "category_id", "image_url", "title"])
-    items.to_csv(items_out, index=False)
+    items.to_parquet(items_out, index=False)
     item_set = set(items["item_id"].tolist())
 
     outfit_rows = []
@@ -120,8 +124,8 @@ def canonicalize_raw(
 
     outfits = pd.DataFrame(outfit_rows, columns=["outfit_id", "outfit_len", "item_seq"])
     outfit_edges_df = pd.DataFrame(outfit_edges, columns=["outfit_id", "item_id", "position"])
-    outfits.to_csv(outfits_out, index=False)
-    outfit_edges_df.to_csv(outfit_edges_out, index=False)
+    outfits.to_parquet(outfits_out, index=False)
+    outfit_edges_df.to_parquet(outfit_edges_out, index=False)
 
     user_seq_rows = []
     click_edges = []
@@ -137,8 +141,44 @@ def canonicalize_raw(
         user_seq_rows, columns=["user_id", "seq_len", "click_seq", "target_outfit_id"]
     )
     user_click_edges = pd.DataFrame(click_edges, columns=["user_id", "item_id", "position"])
-    user_sequences.to_csv(user_seq_out, index=False)
-    user_click_edges.to_csv(user_click_edges_out, index=False)
+    user_sequences.to_parquet(user_seq_out, index=False)
+    user_click_edges.to_parquet(user_click_edges_out, index=False)
+
+    # Tensor-ready artifacts for train/eval stages.
+    if not user_click_edges.empty:
+        cf_edges = (
+            user_click_edges.merge(user_click_edges, on="user_id")
+            .loc[:, ["item_id_x", "item_id_y"]]
+            .rename(columns={"item_id_x": "src_item_id", "item_id_y": "dst_item_id"})
+        )
+        cf_edges = cf_edges[cf_edges["src_item_id"] != cf_edges["dst_item_id"]]
+        cf_counts = cf_edges.groupby(["src_item_id", "dst_item_id"]).size().reset_index(name="weight")
+    else:
+        cf_counts = pd.DataFrame(columns=["src_item_id", "dst_item_id", "weight"])
+
+    item_features = items.copy()
+    item_features["title_tokens"] = item_features["title"].map(_title_tokens)
+    item_features["image_path"] = item_features["image_url"].astype(str)
+    item_features = item_features.merge(
+        cf_counts.groupby("src_item_id")["dst_item_id"]
+        .apply(lambda x: ";".join(sorted(set(x.astype(str).tolist()))[:40]))
+        .reset_index()
+        .rename(columns={"src_item_id": "item_id", "dst_item_id": "cf_neighbors"}),
+        on="item_id",
+        how="left",
+    )
+    item_features["cf_neighbors"] = item_features["cf_neighbors"].fillna("")
+    item_features.to_parquet(out_dir / "item_features.parquet", index=False)
+
+    outfit_sequences = outfits[["outfit_id", "item_seq"]].copy()
+    item_to_cat = dict(zip(items["item_id"], items["category_id"]))
+    outfit_sequences["category_seq"] = outfit_sequences["item_seq"].map(
+        lambda seq: ";".join(item_to_cat.get(x, "UNK") for x in str(seq).split(";") if x)
+    )
+    outfit_sequences.to_parquet(out_dir / "outfit_sequences.parquet", index=False)
+
+    user_histories = user_sequences[["user_id", "click_seq", "target_outfit_id"]].copy()
+    user_histories.to_parquet(out_dir / "user_histories.parquet", index=False)
 
     stats = CanonicalStats(
         users=len(user_sequences),

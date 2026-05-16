@@ -18,7 +18,7 @@ def main() -> None:
     cfg = load_config(args.config)
     out_json = Path(cfg["paths"]["artifacts_dir"]) / "baseline_metrics.json"
     res = run_baselines(
-        embedding_csv=Path(cfg["paths"]["artifacts_dir"]) / "item_embeddings.csv",
+        embedding_csv=Path(cfg["paths"]["artifacts_dir"]) / "item_embeddings.parquet",
         processed_dir=Path(cfg["paths"]["processed_dir"]),
         out_json=out_json,
         emb_col=cfg["evaluation"]["embedding_column"],

@@ -15,14 +15,14 @@ from graph_recsys.utils.config import load_config
 def main() -> None:
     parser = argparse.ArgumentParser(description="Unified evaluation CLI.")
     parser.add_argument("--config", required=True)
-    parser.add_argument("--task", required=True, choices=["fitb", "cp", "all", "pog_proxy"])
+    parser.add_argument("--task", required=True, choices=["fitb", "cp", "all", "pog"])
     args = parser.parse_args()
 
     cfg = load_config(args.config)
     artifacts = Path(cfg["paths"]["artifacts_dir"])
     processed = Path(cfg["paths"]["processed_dir"])
     canonical = Path(cfg["paths"]["canonical_dir"])
-    emb = artifacts / "item_embeddings.csv"
+    emb = artifacts / "item_embeddings.parquet"
 
     if args.task in {"fitb", "cp", "all"}:
         print(
@@ -42,12 +42,12 @@ def main() -> None:
             )
         )
 
-    if args.task in {"pog_proxy", "all"}:
+    if args.task in {"pog", "all"}:
         print(
             evaluate_pog_proxy(
                 embedding_csv=emb,
                 canonical_dir=canonical,
-                out_json=artifacts / "pog_proxy_metrics.json",
+                out_json=artifacts / "pog_metrics.json",
                 k=int(cfg["evaluation"]["k"]),
                 user_limit=int(cfg["evaluation"]["user_limit"]),
                 candidate_pool_limit=int(cfg["evaluation"]["candidate_pool_limit"]),

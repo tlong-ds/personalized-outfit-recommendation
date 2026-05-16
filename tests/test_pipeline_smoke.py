@@ -5,8 +5,8 @@ from graph_recsys.data.splits import build_split_manifest
 from graph_recsys.embeddings.train import train_embeddings
 from graph_recsys.evaluation.build_sets import build_cp_set, build_fitb_set
 from graph_recsys.models.baselines import run_baselines
-from graph_recsys.models.fom import evaluate_fom
-from graph_recsys.models.pog_proxy import evaluate_pog_proxy
+from graph_recsys.models.fom import evaluate_fom, train_fom
+from graph_recsys.models.pog_proxy import evaluate_pog_proxy, train_pog
 
 
 def _write_raw(root: Path) -> None:
@@ -50,12 +50,39 @@ def test_end_to_end_smoke(tmp_path: Path) -> None:
     build_fitb_set(canonical, processed)
     build_cp_set(canonical, processed)
 
-    train_embeddings(canonical, artifacts, de=32, seed=42)
-    fom = evaluate_fom(artifacts / "item_embeddings.csv", processed, artifacts / "fom.json")
-    baselines = run_baselines(artifacts / "item_embeddings.csv", processed, artifacts / "base.json")
-    pog = evaluate_pog_proxy(artifacts / "item_embeddings.csv", canonical, artifacts / "pog.json", k=3)
+    train_embeddings(canonical, artifacts, de=32, seed=42, epochs=1)
+    train_fom(
+        artifacts / "item_embeddings.parquet",
+        canonical,
+        processed,
+        artifacts / "fom_model.pt",
+        emb_col="emb_image_text_cf",
+        de=32,
+        dm=32,
+        layers=1,
+        heads=4,
+        epochs=1,
+    )
+    train_pog(
+        artifacts / "item_embeddings.parquet",
+        canonical,
+        processed,
+        artifacts / "pog_model.pt",
+        emb_col="emb_image_text_cf",
+        de=32,
+        dm=32,
+        layers=1,
+        heads=4,
+        epochs=1,
+    )
+    fom = evaluate_fom(artifacts / "item_embeddings.parquet", processed, artifacts / "fom.json")
+    baselines = run_baselines(artifacts / "item_embeddings.parquet", processed, artifacts / "base.json")
+    pog = evaluate_pog_proxy(artifacts / "item_embeddings.parquet", canonical, artifacts / "pog.json", k=3)
 
     assert 0.0 <= fom["fitb_accuracy"] <= 1.0
     assert 0.0 <= fom["cp_auc"] <= 1.0
     assert "f_lstm_unordered" in baselines
     assert 0.0 <= pog["hit_rate_at_k"] <= 1.0
+    assert (canonical / "item_features.parquet").exists()
+    assert (artifacts / "fom_model.pt").exists()
+    assert (artifacts / "pog_model.pt").exists()

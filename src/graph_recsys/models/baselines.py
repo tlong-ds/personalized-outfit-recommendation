@@ -18,7 +18,7 @@ def _cos(a: np.ndarray, b: np.ndarray) -> float:
 
 
 def _prepare_embeddings(path: Path, emb_col: str) -> dict[str, np.ndarray]:
-    df = pd.read_csv(path)
+    df = pd.read_parquet(path)
     return {row.item_id: _parse_vec(getattr(row, emb_col)) for row in df.itertuples(index=False)}
 
 
@@ -61,8 +61,8 @@ def _score_bilstm(context: list[str], cand: str, emb: dict[str, np.ndarray], ord
 
 def run_baselines(embedding_csv: Path, processed_dir: Path, out_json: Path, emb_col: str = "emb_image_text_cf") -> dict[str, dict[str, float]]:
     emb = _prepare_embeddings(embedding_csv, emb_col)
-    fitb = pd.read_csv(processed_dir / "fitb_eval.csv")
-    cp = pd.read_csv(processed_dir / "cp_eval.csv")
+    fitb = pd.read_parquet(processed_dir / "fitb_eval.parquet")
+    cp = pd.read_parquet(processed_dir / "cp_eval.parquet")
 
     models = {
         "f_lstm_unordered": lambda ctx, cand: _score_flstm(ctx, cand, emb, ordered=False),

@@ -6,24 +6,37 @@ setup_src_path()
 import argparse
 from pathlib import Path
 
-from graph_recsys.models.fom import evaluate_fom
 from graph_recsys.utils.config import load_config
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evaluate FOM proxy on FITB/CP.")
+    parser = argparse.ArgumentParser(description="Train FOM transformer model.")
     parser.add_argument("--config", required=True)
     args = parser.parse_args()
 
     cfg = load_config(args.config)
-    out_json = Path(cfg["paths"]["artifacts_dir"]) / "fom_metrics.json"
-    res = evaluate_fom(
-        embedding_csv=Path(cfg["paths"]["artifacts_dir"]) / "item_embeddings.csv",
+    backend = str(cfg["training"].get("backend", "torch")).lower()
+    kwargs = dict(
+        embedding_csv=Path(cfg["paths"]["artifacts_dir"]) / "item_embeddings.parquet",
+        canonical_dir=Path(cfg["paths"]["canonical_dir"]),
         processed_dir=Path(cfg["paths"]["processed_dir"]),
-        out_json=out_json,
+        checkpoint_path=Path(cfg["paths"]["artifacts_dir"]) / ("fom_model_tf.weights.h5" if backend == "tensorflow" else "fom_model.pt"),
         emb_col=cfg["evaluation"]["embedding_column"],
+        de=int(cfg["training"]["de"]),
+        dm=int(cfg["training"]["dm"]),
+        layers=int(cfg["training"]["layers"]),
+        heads=int(cfg["training"]["heads"]),
+        epochs=int(cfg["training"]["epochs"]),
     )
-    print(res)
+    if backend == "tensorflow":
+        from graph_recsys.training.tf_stack import train_fom_tf
+
+        ckpt = train_fom_tf(**kwargs)
+    else:
+        from graph_recsys.models.fom import train_fom
+
+        ckpt = train_fom(**kwargs)
+    print(f"Saved FOM checkpoint: {ckpt}")
 
 
 if __name__ == "__main__":

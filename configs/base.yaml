@@ -14,13 +14,16 @@ data:
   max_items: 250000
 
 training:
+  backend: tensorflow
   seed: 42
-  epochs: 5
+  epochs: 3
   learning_rate: 0.001
   de: 128
   dm: 64
   layers: 6
   heads: 8
+  triplet_margin: 0.1
+  fitb_negatives: 3
 
 evaluation:
   embedding_column: emb_image_text_cf

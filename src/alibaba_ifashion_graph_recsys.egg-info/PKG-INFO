@@ -7,12 +7,17 @@ Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 Requires-Dist: pandas>=2.2.0
 Requires-Dist: numpy>=1.26.0
+Requires-Dist: pyarrow>=16.0.0
 Requires-Dist: networkx>=3.3
 Requires-Dist: pyyaml>=6.0.0
 Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: dvc
 Provides-Extra: train
 Requires-Dist: torch>=2.2.0; extra == "train"
 Requires-Dist: torch-geometric>=2.6.0; extra == "train"
+Provides-Extra: train-mac
+Requires-Dist: tensorflow-macos>=2.16.0; platform_system == "Darwin" and extra == "train-mac"
+Requires-Dist: tensorflow-metal>=1.1.0; platform_system == "Darwin" and extra == "train-mac"
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0.0; extra == "dev"
 Requires-Dist: ruff>=0.6.0; extra == "dev"

@@ -13,9 +13,9 @@ def _parse_seq(seq: str) -> list[str]:
 
 
 def build_fitb_set(canonical_dir: Path, processed_dir: Path, negative_k: int = 3) -> Path:
-    outfits = pd.read_csv(canonical_dir / "outfits.csv")
+    outfits = pd.read_parquet(canonical_dir / "outfits.parquet")
     manifest = read_json(processed_dir / "split_manifest.json")
-    test_ids = set(manifest["test_outfit_ids"])
+    test_ids = set(manifest["fom"]["test_outfit_ids"])
 
     pool = set()
     for seq in outfits["item_seq"].astype(str):
@@ -42,15 +42,15 @@ def build_fitb_set(canonical_dir: Path, processed_dir: Path, negative_k: int = 3
             )
 
     ensure_dir(processed_dir)
-    out_path = processed_dir / "fitb_eval.csv"
-    pd.DataFrame(rows).to_csv(out_path, index=False)
+    out_path = processed_dir / "fitb_eval.parquet"
+    pd.DataFrame(rows).to_parquet(out_path, index=False)
     return out_path
 
 
 def build_cp_set(canonical_dir: Path, processed_dir: Path) -> Path:
-    outfits = pd.read_csv(canonical_dir / "outfits.csv")
+    outfits = pd.read_parquet(canonical_dir / "outfits.parquet")
     manifest = read_json(processed_dir / "split_manifest.json")
-    test_ids = set(manifest["test_outfit_ids"])
+    test_ids = set(manifest["fom"]["test_outfit_ids"])
 
     compatible = outfits[outfits["outfit_id"].isin(test_ids)].copy()
 
@@ -77,6 +77,6 @@ def build_cp_set(canonical_dir: Path, processed_dir: Path) -> Path:
     comp_rows["label"] = 1
 
     cp = pd.concat([comp_rows, pd.DataFrame(incompatible_rows)], ignore_index=True)
-    out_path = processed_dir / "cp_eval.csv"
-    cp.to_csv(out_path, index=False)
+    out_path = processed_dir / "cp_eval.parquet"
+    cp.to_parquet(out_path, index=False)
     return out_path

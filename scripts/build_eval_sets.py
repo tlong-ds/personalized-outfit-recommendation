@@ -19,7 +19,11 @@ def main() -> None:
     canonical_dir = Path(cfg["paths"]["canonical_dir"])
     processed_dir = Path(cfg["paths"]["processed_dir"])
 
-    fitb = build_fitb_set(canonical_dir=canonical_dir, processed_dir=processed_dir, negative_k=3)
+    fitb = build_fitb_set(
+        canonical_dir=canonical_dir,
+        processed_dir=processed_dir,
+        negative_k=int(cfg["training"]["fitb_negatives"]),
+    )
     cp = build_cp_set(canonical_dir=canonical_dir, processed_dir=processed_dir)
 
     print(f"FITB set: {fitb}")
