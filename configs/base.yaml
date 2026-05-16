@@ -1,0 +1,29 @@
+project:
+  name: alibaba-ifashion-graph-recsys
+
+paths:
+  raw_dir: data/raw
+  canonical_dir: data/interim/canonical
+  processed_dir: data/processed
+  artifacts_dir: artifacts
+
+data:
+  sample_ratio: 0.01
+  test_ratio: 0.10
+  max_user_clicks: 50
+  max_items: 250000
+
+training:
+  seed: 42
+  epochs: 5
+  learning_rate: 0.001
+  de: 128
+  dm: 64
+  layers: 6
+  heads: 8
+
+evaluation:
+  embedding_column: emb_image_text_cf
+  k: 10
+  user_limit: 1000
+  candidate_pool_limit: 5000

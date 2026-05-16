@@ -1,0 +1,14 @@
+pandas>=2.2.0
+numpy>=1.26.0
+networkx>=3.3
+pyyaml>=6.0.0
+python-dotenv>=1.0.0
+
+[dev]
+pytest>=8.0.0
+ruff>=0.6.0
+mypy>=1.10.0
+
+[train]
+torch>=2.2.0
+torch-geometric>=2.6.0

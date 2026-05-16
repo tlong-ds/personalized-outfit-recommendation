@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alibaba-ifashion-graph-recsys"
+version = "0.1.0"
+description = "Graph-based recommendation system scaffold"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Long" }]
+dependencies = [
+  "pandas>=2.2.0",
+  "numpy>=1.26.0",
+  "networkx>=3.3",
+  "pyyaml>=6.0.0",
+  "python-dotenv>=1.0.0",
+  "dvc"
+]
+
+[project.optional-dependencies]
+train = [
+  "torch>=2.2.0",
+  "torch-geometric>=2.6.0"
+]
+dev = [
+  "pytest>=8.0.0",
+  "ruff>=0.6.0",
+  "mypy>=1.10.0"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
